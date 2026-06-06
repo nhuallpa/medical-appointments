@@ -1,0 +1,123 @@
+.empty {
+  background: transparent;
+  min-height: 100px;
+}
+
+.cell {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 100px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  transition: border-color 0.15s;
+}
+
+.cell:hover {
+  border-color: var(--color-primary);
+}
+
+.today {
+  background: var(--color-today);
+  border-color: var(--color-today-border);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dayNumber {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.today .dayNumber {
+  color: var(--color-primary);
+}
+
+.addBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.cell:hover .addBtn,
+.cell:focus-within .addBtn {
+  opacity: 1;
+}
+
+.addBtn:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.appointmentList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.appointmentItem {
+  width: 100%;
+  text-align: left;
+  background: var(--color-appointment-bg);
+  color: var(--color-appointment-text);
+  border-radius: var(--radius-sm);
+  padding: 2px 5px;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  display: flex;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+}
+
+.appointmentItem:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.apptTime {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.apptName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .cell {
+    min-height: 60px;
+    padding: 4px;
+  }
+
+  .dayNumber {
+    font-size: 0.75rem;
+  }
+
+  .appointmentItem {
+    font-size: 0.65rem;
+  }
+}

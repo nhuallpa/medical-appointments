@@ -1,0 +1,48 @@
+.emptyState {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  padding: 10px 0 4px;
+}
+
+.emptyState span {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.weekdayHeader {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 0 8px 24px;
+  }
+
+  .grid {
+    gap: 2px;
+  }
+
+  .weekdayHeader {
+    font-size: 0.65rem;
+    padding: 6px 0;
+  }
+}
