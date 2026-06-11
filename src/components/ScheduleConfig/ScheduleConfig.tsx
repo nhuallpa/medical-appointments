@@ -19,6 +19,7 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
   const [enabledDays, setEnabledDays] = useState<number[]>(config.enabledDays);
   const [startTime, setStartTime] = useState(config.startTime);
   const [endTime, setEndTime] = useState(config.endTime);
+  const [slotIntervalMinutes, setSlotIntervalMinutes] = useState(config.slotIntervalMinutes ?? 30);
 
   const toggleDay = (dow: number) => {
     setEnabledDays((prev) =>
@@ -27,7 +28,7 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
   };
 
   const handleSave = async () => {
-    const updated: ScheduleConfigType = { enabledDays, startTime, endTime };
+    const updated: ScheduleConfigType = { enabledDays, startTime, endTime, slotIntervalMinutes };
     logger.info("Saving schedule config", updated);
     await logScheduleConfigUpdated();
     onSave(updated);
@@ -81,6 +82,22 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
             />
+          </div>
+          <div className={styles.timeField}>
+            <label htmlFor="slotInterval" className={styles.timeLabel}>
+              Slot Interval
+            </label>
+            <select
+              id="slotInterval"
+              className={styles.timeInput}
+              value={slotIntervalMinutes}
+              onChange={(e) => setSlotIntervalMinutes(Number(e.target.value))}
+            >
+              <option value={15}>15 minutes</option>
+              <option value={30}>30 minutes</option>
+              <option value={45}>45 minutes</option>
+              <option value={60}>60 minutes</option>
+            </select>
           </div>
         </div>
       </div>

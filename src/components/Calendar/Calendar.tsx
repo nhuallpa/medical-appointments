@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { generateMonthGrid } from "@/utils/dateUtils";
+import { isDateEnabled } from "@/utils/scheduleUtils";
 import { CalendarHeader } from "./CalendarHeader";
 import { CalendarDay } from "./CalendarDay";
 import type { Appointment } from "@/types/appointment";
@@ -16,7 +17,16 @@ interface CalendarProps {
 }
 
 export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
-  const { appointments, appointmentTypes, currentYear, currentMonth, navigateMonth, goToToday } = useAppointments();
+  const {
+    appointments,
+    appointmentTypes,
+    scheduleConfig,
+    currentYear,
+    currentMonth,
+    navigateMonth,
+    goToToday,
+    setCurrentDate,
+  } = useAppointments();
 
   const grid = generateMonthGrid(currentYear, currentMonth, appointments);
 
@@ -54,10 +64,12 @@ export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
             key={cell.date ?? `blank-${idx}`}
             date={cell.date}
             isToday={cell.isToday}
+            isUnavailable={cell.date ? !isDateEnabled(cell.date, scheduleConfig.enabledDays) : false}
             appointments={cell.appointments}
             appointmentTypes={appointmentTypes}
             onAddClick={onAddClick}
             onAppointmentClick={onAppointmentClick}
+            onSelectDate={setCurrentDate}
           />
         ))}
       </div>

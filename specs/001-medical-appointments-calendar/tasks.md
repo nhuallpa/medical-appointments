@@ -1,10 +1,10 @@
-# Tasks: Medical Appointments Calendar
+# Tasks: Appointment Types, Repeatable Appointments & Schedule Configuration
 
+**Feature increment**: Repeatable appointments, appointment types, and schedule availability configuration
+**Built on top of**: Completed MVP (US1–US4 — view, navigate, add, delete appointments)
 **Input**: Design documents from `specs/001-medical-appointments-calendar/`
 
-**Prerequisites**: plan.md ✅, spec.md ✅, data-model.md ✅, contracts/ui-contracts.md ✅, research.md ✅, quickstart.md ✅
-
-**Testing**: Unit tests (Vitest + RTL) and integration tests (Playwright) are REQUIRED per the Testing Discipline principle of the project constitution. Tests are NOT optional.
+**Testing**: Unit tests (Vitest + RTL) and integration tests (Playwright) are REQUIRED per the Testing Discipline principle of the project constitution.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -14,144 +14,164 @@
 - **[Story]**: Which user story this task belongs to (US1, US2, US3, US4)
 - Exact file paths are included in every task description
 
-## Path Conventions
+---
 
-All source code lives under `src/` with Next.js App Router at `src/app/`. Tests live at the root `tests/` directory, split into `tests/unit/` (Vitest + RTL) and `tests/integration/` (Playwright).
+## New Entities (reference while implementing)
+
+```typescript
+// Appointment type: defines whether a type is individual or repeatable
+interface AppointmentType {
+  id: string;
+  name: string;           // e.g. "Dental", "Rehabilitation"
+  repeatable: boolean;    // false = individual, true = can be a series
+  maxSessions: number;    // 1 for individual; up to N for repeatable
+  color?: string;         // Hex color for calendar display (optional)
+}
+
+// Schedule configuration: which days/hours are available for consultations
+interface ScheduleConfig {
+  enabledDays: number[];  // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  startTime: string;      // "HH:MM" — consultation start time
+  endTime: string;        // "HH:MM" — consultation end time
+}
+
+// Extended Appointment (adds typeId and optional series fields)
+interface Appointment {
+  id: string;
+  patientName: string;
+  professionalName: string;
+  date: string;
+  time: string;
+  typeId: string;          // Reference to AppointmentType.id
+  seriesId?: string;       // UUID shared by all appointments in a series
+  seriesIndex?: number;    // 1-based position within the series
+  notes?: string;
+  createdAt: string;
+}
+
+// Extended form data
+interface AppointmentFormData {
+  patientName: string;
+  professionalName: string;
+  date: string;           // First date of the series (or only date for individual)
+  time: string;
+  typeId: string;
+  sessions: number;       // 1 for individual; 1–maxSessions for repeatable types
+  notes?: string;
+}
+```
 
 ---
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 1: Foundational Extensions (Blocking Prerequisites)
 
-**Purpose**: Project initialization, tooling configuration, and dependency installation.
+**Purpose**: Extend the data model, reducer, and utilities to support the new entities before any UI work begins.
 
-- [X] T001 Initialize Next.js 14+ project with TypeScript 5.x (App Router) and install all dependencies listed in plan.md (react, react-dom, next, typescript, firebase) in package.json
-- [X] T002 [P] Configure ESLint with TypeScript rules and Prettier formatting in .eslintrc.json and .prettierrc
-- [X] T003 [P] Configure Vitest with React Testing Library and jsdom environment in vitest.config.ts and tests/setup.ts
-- [X] T004 [P] Configure Playwright for integration tests targeting http://localhost:3000 in playwright.config.ts
-- [X] T005 [P] Add global CSS reset and base typography in src/app/globals.css
+**⚠️ CRITICAL**: All user story phases depend on this foundation.
 
-**Checkpoint**: Dependencies installed, all tooling runnable — `npm run dev`, `npm run test`, `npm run test:e2e` should launch without errors (tests will fail until implemented).
+- [X] T001 Extend TypeScript interfaces in src/types/appointment.ts: add `AppointmentType`, `ScheduleConfig`, update `Appointment` (add `typeId`, `seriesId?`, `seriesIndex?`), update `AppointmentFormData` (add `typeId`, `sessions`), update `AppointmentState` (add `appointmentTypes: AppointmentType[]`, `scheduleConfig: ScheduleConfig`), add new `AppointmentAction` variants (`ADD_APPOINTMENT_TYPE`, `DELETE_APPOINTMENT_TYPE`, `UPDATE_SCHEDULE_CONFIG`, `ADD_APPOINTMENT_SERIES`)
+- [X] T002 [P] Implement `scheduleUtils.ts` with pure functions: `generateSeriesDates(startDate, sessions, enabledDays)` → `string[]` (consecutive enabled-day dates starting from startDate), `isDateEnabled(dateKey, enabledDays)` → `boolean`, `isTimeInRange(time, startTime, endTime)` → `boolean`, `getDefaultSchedule()` → `ScheduleConfig` (Mon–Fri, 08:00–18:00) in src/utils/scheduleUtils.ts
+- [X] T003 [P] Write unit tests for all scheduleUtils functions including edge cases (series crossing month boundaries, weekend skipping, time boundary checks) in tests/unit/utils/scheduleUtils.test.ts
+- [X] T004 Extend `AppointmentContext` reducer in src/context/AppointmentContext.tsx: add default `appointmentTypes` (seed "Dental"=individual and "Rehabilitation"=repeatable/10sessions), add default `scheduleConfig` (Mon–Fri, 08:00–18:00), implement `ADD_APPOINTMENT_TYPE`, `DELETE_APPOINTMENT_TYPE`, `UPDATE_SCHEDULE_CONFIG`, and `ADD_APPOINTMENT_SERIES` (generates N appointments on consecutive enabled days using `generateSeriesDates`); update `DELETE_APPOINTMENT` to clear `selectedAppointment` when any appointment in the same series is selected; add `DELETE_SERIES` action that removes all appointments sharing a `seriesId`
+- [X] T005 Extend `useAppointments` hook in src/hooks/useAppointments.ts: add `appointmentTypes`, `scheduleConfig`, `addAppointmentType`, `deleteAppointmentType`, `updateScheduleConfig`, `addAppointmentSeries`, `deleteSeries` to the hook's return type and implementation
 
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core shared infrastructure — types, state management, utility functions, logging, and analytics initialization. No user story work can begin until this phase is complete.
-
-**⚠️ CRITICAL**: All subsequent phases depend on this foundation being in place.
-
-- [X] T006 Define all TypeScript interfaces (Appointment, AppointmentFormData, AppointmentsByDate, CalendarCell, CalendarGrid, AppointmentState, AppointmentAction union type) in src/types/appointment.ts
-- [X] T007 [P] Implement dateUtils pure functions — generateMonthGrid, toDateKey, formatMonthLabel, isToday — in src/utils/dateUtils.ts (no side effects; all independently unit-testable)
-- [X] T008 [P] Write unit tests covering all dateUtils functions including edge cases (month boundaries, leap years, today detection) in tests/unit/utils/dateUtils.test.ts
-- [X] T009 Implement AppointmentContext with useReducer handling all six actions (ADD_APPOINTMENT, DELETE_APPOINTMENT, SELECT_APPOINTMENT, CLEAR_SELECTION, NAVIGATE_MONTH, GO_TO_TODAY) in src/context/AppointmentContext.tsx
-- [X] T010 Implement useAppointments consumer hook exposing state, derived appointmentsByDate, and all operation functions; throw if called outside AppointmentProvider in src/hooks/useAppointments.ts
-- [X] T011 [P] Write unit tests for useAppointments hook covering all dispatch actions and derived appointmentsByDate computation in tests/unit/hooks/useAppointments.test.ts
-- [X] T012 [P] Implement structured logging utility with info/warn/error/debug levels, a module prefix parameter, and NODE_ENV-aware output suppression in src/utils/logger.ts
-- [X] T013 [P] Initialize Firebase Analytics: configure Firebase app with environment variables, export a logEvent wrapper that accepts event name and params, and export named helpers (logPageView, logAppointmentCreated, logAppointmentDeleted, logMonthNavigated) in src/lib/analytics.ts
-- [X] T014 Configure root layout wrapping the full component tree with AppointmentProvider and applying globals.css in src/app/layout.tsx
-
-**Checkpoint**: Foundation ready — types compile, dateUtils tests pass, reducer handles all actions, logging and analytics modules export correctly.
+**Checkpoint**: Types compile, reducer handles all new actions, scheduleUtils tests pass.
 
 ---
 
-## Phase 3: User Story 1 — View Monthly Calendar (Priority: P1) 🎯 MVP
+## Phase 2: User Story 1 — Appointment Types (Priority: P1) 🎯 MVP
 
-**Goal**: A user opens the application and immediately sees a monthly calendar grid showing all appointments on their correct dates.
+**Goal**: Users can define appointment types (individual vs repeatable with max sessions). The appointment form shows a type selector, and when a repeatable type is selected the sessions count input appears.
 
-**Independent Test**: Open the application (with or without pre-seeded appointments). Verify the current month name and year appear in the header, a 7-column day grid is visible with all days of the month in the correct positions, and any appointments appear on their matching date cells.
+**Independent Test**: Open the appointment form → verify a Type dropdown is present with "Dental" and "Rehabilitation" as defaults → select "Rehabilitation" → verify a Sessions input appears (max 10) → select "Dental" → verify Sessions input disappears. Navigate to Settings → create a new type "Physical Therapy" (repeatable, 8 sessions) → verify it appears in the form dropdown.
 
-### Tests for User Story 1 (REQUIRED per constitution) ⚠️
+### Tests for User Story 1 ⚠️
 
-> **Write these tests FIRST — they must FAIL before implementation begins.**
-
-- [X] T015 [P] [US1] Write unit tests for CalendarDay (renders day number, renders appointment list items, renders null cell as empty, calls onAddClick and onAppointmentClick) in tests/unit/components/Calendar.test.tsx
-- [X] T016 [P] [US1] Write integration test for the view-calendar scenario (app loads, current month displayed, days visible, appointments on correct dates) in tests/integration/view-calendar.spec.ts
+- [X] T006 [P] [US1] Write unit tests for AppointmentTypeManager: renders existing types, add-type form validation, delete action in tests/unit/components/AppointmentTypeManager.test.tsx
+- [X] T007 [P] [US1] Write unit tests for updated AppointmentForm: type selector renders, sessions field appears/hides based on type, form submission includes typeId and sessions in tests/unit/components/AppointmentForm.test.tsx (update existing file)
 
 ### Implementation for User Story 1
 
-- [X] T017 [US1] Implement CalendarDay component rendering the day number, appointment items (patientName + time), add-click handler, and appointment-click handler; render empty cell when date is null in src/components/Calendar/CalendarDay.tsx and src/components/Calendar/CalendarDay.module.css
-- [X] T018 [US1] Implement CalendarHeader component rendering the month/year label and three accessible buttons (prev, next, today) with aria-label attributes per ui-contracts.md in src/components/Calendar/CalendarHeader.tsx and src/components/Calendar/CalendarHeader.module.css
-- [X] T019 [US1] Implement Calendar component: call generateMonthGrid from useAppointments state, render CalendarHeader and a 7-column CSS Grid of CalendarDay cells in src/components/Calendar/Calendar.tsx and src/components/Calendar/Calendar.module.css
-- [X] T020 [US1] Implement the main page rendering Calendar and wiring add/select/close state with useState for form and detail modal visibility in src/app/page.tsx
-- [X] T021 [US1] Fire logPageView() from analytics.ts on calendar mount in src/app/page.tsx; log calendar_view_loaded using logger.ts
+- [X] T008 [US1] Implement `AppointmentTypeManager` component: list all types with name, individual/repeatable badge, maxSessions, and delete button; inline add-type form with name input, repeatable toggle, max sessions input (visible when repeatable=true) in src/components/AppointmentTypeManager/AppointmentTypeManager.tsx and src/components/AppointmentTypeManager/AppointmentTypeManager.module.css
+- [X] T009 [US1] Update `AppointmentForm` to add a Type `<select>` field (required, maps to `typeId`), conditionally render Sessions `<input type="number">` when the selected type has `repeatable=true` (min=1, max=type.maxSessions, default=type.maxSessions), and include `typeId` and `sessions` in the submitted `AppointmentFormData` in src/components/AppointmentForm/AppointmentForm.tsx
+- [X] T010 [US1] Show the appointment type name as a badge on each appointment item in CalendarDay and in the AppointmentDetail view in src/components/Calendar/CalendarDay.tsx and src/components/AppointmentDetail/AppointmentDetail.tsx
+- [X] T011 [US1] Add Firebase Analytics event `appointment_type_created` in src/lib/analytics.ts and call it from AppointmentTypeManager; log operations via `createLogger("AppointmentTypeManager")` from src/utils/logger.ts
 
-**Checkpoint**: US1 fully functional and independently testable — calendar displays, appointments render on correct dates, integration test passes.
+**Checkpoint**: Appointment form shows Type selector with default types. Sessions field appears for repeatable types. New types can be added and deleted from the AppointmentTypeManager.
 
 ---
 
-## Phase 4: User Story 2 — Navigate Between Months (Priority: P2)
+## Phase 3: User Story 2 — Schedule Configuration (Priority: P2)
 
-**Goal**: A user clicks prev/next to move between months one step at a time, and Today to return to the current month with today's date highlighted.
+**Goal**: Users can configure which days of the week and which time window are enabled for consultations. The form warns when an appointment is scheduled outside the configured availability.
 
-**Independent Test**: With the current month visible, click next — verify header shows the following month. Click prev — verify the original month is restored. Click Today — verify the current month returns and today's date cell is visually highlighted.
+**Independent Test**: Open Settings → Days of Week: uncheck Saturday and Sunday → Time Range: set 09:00–17:00 → Save → Go back to calendar → Add appointment on a Saturday → verify a visible warning is displayed on the form. Go to a weekday → add appointment at 07:00 → verify warning. Go to weekday, add at 10:00 → verify no warning.
 
-### Tests for User Story 2 (REQUIRED per constitution) ⚠️
+### Tests for User Story 2 ⚠️
 
-- [X] T022 [P] [US2] Write unit tests for CalendarHeader navigation callbacks and for NAVIGATE_MONTH / GO_TO_TODAY reducer actions in tests/unit/components/Calendar.test.tsx
-- [X] T023 [P] [US2] Write integration test for navigate-months scenario (next, prev, today, today-highlight) in tests/integration/navigate-months.spec.ts
+- [X] T012 [P] [US2] Write unit tests for ScheduleConfig component: renders day checkboxes, time inputs, calls onSave with correct ScheduleConfig in tests/unit/components/ScheduleConfig.test.tsx
+- [X] T013 [P] [US2] Write integration test for the schedule configuration flow (open settings, change days, change times, save, then verify warning in appointment form) in tests/integration/schedule-config.spec.ts
 
 ### Implementation for User Story 2
 
-- [X] T024 [US2] Wire navigateMonth and goToToday from useAppointments into CalendarHeader onPrev, onNext, onToday props using useCallback in src/components/Calendar/Calendar.tsx
-- [X] T025 [US2] Add CSS class for today-highlighted day cell (distinct background or border) using isToday prop in src/components/Calendar/CalendarDay.module.css
-- [X] T026 [US2] Call logMonthNavigated(direction) from analytics.ts and log navigation action via logger.ts in src/components/Calendar/CalendarHeader.tsx
+- [X] T014 [US2] Implement `ScheduleConfig` component: 7 day-of-week checkboxes (Sun–Sat labels), start-time and end-time inputs, Save button that calls `onSave(config)`; show current config values as defaults in src/components/ScheduleConfig/ScheduleConfig.tsx and src/components/ScheduleConfig/ScheduleConfig.module.css
+- [X] T015 [US2] Create settings page at src/app/settings/page.tsx with two panels: "Appointment Types" (renders `AppointmentTypeManager`) and "Schedule Configuration" (renders `ScheduleConfig` wired to `updateScheduleConfig` from `useAppointments`)
+- [X] T016 [US2] Add a "Settings" navigation link/button to the main calendar page in src/app/page.tsx (link to `/settings`)
+- [X] T017 [US2] Add a schedule-conflict warning inside `AppointmentForm`: when the selected date falls on a disabled day OR the selected time is outside the configured range, display an inline warning message (non-blocking — user can still save) in src/components/AppointmentForm/AppointmentForm.tsx
+- [X] T018 [US2] Add Firebase Analytics event `schedule_config_updated` in src/lib/analytics.ts and call it from the ScheduleConfig component on save; log via `createLogger("ScheduleConfig")`
 
-**Checkpoint**: US1 + US2 both pass their integration tests independently; today's date is visually highlighted after clicking Today.
+**Checkpoint**: Settings page accessible. Day/time configuration persists in session. Appointment form shows out-of-schedule warnings.
 
 ---
 
-## Phase 5: User Story 3 — Add a Medical Appointment (Priority: P3)
+## Phase 4: User Story 3 — Create Repeatable Appointments (Priority: P3)
 
-**Goal**: A user clicks a date cell or an Add Appointment button, completes the form, submits, and the new appointment appears on the calendar on the correct date immediately.
+**Goal**: When creating an appointment with a repeatable type and sessions > 1, the system generates the full series of appointments on consecutive enabled days at the same time. All series appointments appear on the calendar.
 
-**Independent Test**: Click any date cell — form opens with that date pre-filled. Fill patient name, professional name, and time. Submit. Verify the appointment appears on the correct calendar date showing patient name and time. Attempt submit with a missing required field — verify the field is highlighted and the form does not save.
+**Independent Test**: Select type "Rehabilitation", set sessions=5, pick a Monday date at 10:00. Submit. Verify that 5 appointments appear on the calendar: Monday, Tuesday, Wednesday, Thursday, Friday of that week, all at 10:00 for the same patient and professional. Each shows a series badge indicating its position (e.g. "1/5", "2/5").
 
-### Tests for User Story 3 (REQUIRED per constitution) ⚠️
+### Tests for User Story 3 ⚠️
 
-- [X] T027 [P] [US3] Write unit tests for AppointmentForm: required field validation errors, pre-filled date, successful onSubmit call, Escape/cancel triggers onCancel in tests/unit/components/AppointmentForm.test.tsx
-- [X] T028 [P] [US3] Write integration test for add-appointment scenario (open form via date click, fill fields, submit, verify calendar entry) in tests/integration/add-appointment.spec.ts
+- [X] T019 [P] [US3] Write integration test for the repeatable appointments flow (select repeatable type, set sessions=3, submit, verify 3 calendar entries on consecutive enabled days) in tests/integration/repeatable-appointments.spec.ts
 
 ### Implementation for User Story 3
 
-- [X] T029 [US3] Implement AppointmentForm modal with all five fields (patientName, professionalName, date, time, notes), per-field error display, focus trapping, Escape/outside-click cancel, and calling onSubmit only with valid data in src/components/AppointmentForm/AppointmentForm.tsx and src/components/AppointmentForm/AppointmentForm.module.css
-- [X] T030 [US3] Wire onAddClick in CalendarDay to open AppointmentForm pre-filled with the clicked date; call addAppointment and close form on submit in src/app/page.tsx
-- [X] T031 [US3] Call logAppointmentCreated() from analytics.ts and log the creation event via logger.ts inside AppointmentForm.tsx after successful submission
+- [X] T020 [US3] Update `src/app/page.tsx` to call `addAppointmentSeries(data)` when `data.sessions > 1` and the selected type is repeatable, or `addAppointment(data)` when sessions=1; pass `scheduleConfig.enabledDays` as context for date generation
+- [X] T021 [US3] Add a series indicator to `CalendarDay` appointment items: show "N/M" badge (e.g. "2/5") when the appointment has a `seriesId` and `seriesIndex`, styled as a small overlay chip in src/components/Calendar/CalendarDay.tsx and src/components/Calendar/CalendarDay.module.css
+- [X] T022 [US3] Add Firebase Analytics event `appointment_series_created` with `{ sessions, typeId }` params in src/lib/analytics.ts and call it from page.tsx after successful series submission; log via `createLogger("page")`
 
-**Checkpoint**: US1 + US2 + US3 all independently testable; appointments created in the session persist until page reload.
+**Checkpoint**: Repeatable types generate full series. Series entries visible on calendar with position badges. Individual appointments unaffected.
 
 ---
 
-## Phase 6: User Story 4 — Delete a Medical Appointment (Priority: P4)
+## Phase 5: User Story 4 — Series Management (Priority: P4)
 
-**Goal**: A user selects an existing appointment, views its details, clicks Delete, confirms the prompt, and the appointment is permanently removed from the calendar.
+**Goal**: A user can view all appointments in a series from the detail panel, and delete the entire series at once or just the individual appointment.
 
-**Independent Test**: With an appointment on the calendar, click it — detail view opens showing all fields. Click Delete — confirmation prompt appears. Click Cancel — appointment remains. Click Delete again and Confirm — appointment is gone from the calendar.
+**Independent Test**: With a 5-session rehabilitation series on the calendar, click one appointment → detail view opens → verify a "Part of series (2/5)" indicator is shown → verify a "Delete Series (5 appointments)" button is present → click it → confirm → verify all 5 appointments are removed from the calendar.
 
-### Tests for User Story 4 (REQUIRED per constitution) ⚠️
+### Tests for User Story 4 ⚠️
 
-- [X] T032 [P] [US4] Write unit tests for AppointmentDetail: displays all fields, delete-then-confirm calls onDelete, cancel retains appointment, Escape triggers onClose in tests/unit/components/AppointmentDetail.test.tsx
-- [X] T033 [P] [US4] Write integration test for delete-appointment scenario (select, confirm-delete, verify removed; select, cancel-delete, verify retained) in tests/integration/delete-appointment.spec.ts
+- [X] T023 [P] [US4] Write unit tests for updated AppointmentDetail: shows series info, Delete Series button appears for series appointments, calls onDeleteSeries with seriesId in tests/unit/components/AppointmentDetail.test.tsx (update existing file)
 
 ### Implementation for User Story 4
 
-- [X] T034 [US4] Implement AppointmentDetail modal displaying all appointment fields and a two-step delete flow (Delete button → inline confirmation with Confirm + Cancel); Escape/outside-click triggers onClose, never onDelete in src/components/AppointmentDetail/AppointmentDetail.tsx and src/components/AppointmentDetail/AppointmentDetail.module.css
-- [X] T035 [US4] Wire onAppointmentClick in CalendarDay to selectAppointment; render AppointmentDetail when selectedAppointment is non-null; call deleteAppointment and clearSelection on confirm in src/app/page.tsx
-- [X] T036 [US4] Call logAppointmentDeleted() from analytics.ts and log the deletion event via logger.ts inside AppointmentDetail.tsx after confirmed deletion
+- [X] T024 [US4] Update `AppointmentDetail` to show series indicator ("Part of series: N of M sessions") and a "Delete Entire Series" button when `appointment.seriesId` is defined; existing single-delete flow unchanged in src/components/AppointmentDetail/AppointmentDetail.tsx
+- [X] T025 [US4] Wire `deleteSeries(seriesId)` from `useAppointments` into the detail view; call `clearSelection()` after series deletion in src/app/page.tsx
+- [X] T026 [US4] Add Firebase Analytics event `appointment_series_deleted` in src/lib/analytics.ts and call it from AppointmentDetail on confirmed series deletion; log via `createLogger("AppointmentDetail")`
 
-**Checkpoint**: All four user stories pass their integration tests independently. Full CRUD cycle (view → navigate → add → delete) is operational.
+**Checkpoint**: Series appointments show position. Full-series deletion works. Single appointment deletion from a series still works.
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 6: Polish & Cross-Cutting Concerns
 
-**Purpose**: Accessibility, responsiveness, logging standard enforcement, performance validation, and final sign-off.
+**Purpose**: Accessibility, responsive layout, logging standard enforcement, and code quality for the new components.
 
-- [X] T037 [P] Accessibility audit: verify aria-labels on all interactive elements, focus trapping in AppointmentForm and AppointmentDetail modals, keyboard navigation (Tab, Enter, Escape) across all components
-- [X] T038 [P] Add responsive CSS rules for mobile viewports (< 768px) — collapse calendar grid columns, increase touch target sizes — in src/components/Calendar/Calendar.module.css and src/app/globals.css
-- [X] T039 Logging standard sweep: replace any direct console.log/warn/error calls with the logger utility from src/utils/logger.ts across all src/ files
-- [X] T040 Performance check: load the app in Chrome DevTools and confirm calendar renders and is interactive within 2 seconds (SC-005); document result in quickstart.md
-- [X] T041 Run all validation steps from quickstart.md for all four user stories and confirm every acceptance scenario passes
-- [X] T042 [P] Code cleanup: remove dead code, unused imports, and commented-out blocks; verify all identifiers follow camelCase/PascalCase per Code Standards principle
+- [X] T027 [P] Verify aria-labels on all new interactive elements: day-of-week checkboxes in ScheduleConfig, type selector in AppointmentForm, sessions input, Delete Series button in AppointmentDetail
+- [X] T028 [P] Add responsive CSS for the settings page panels for mobile viewports (< 768px) in src/app/settings/page.module.css (create) and src/components/AppointmentTypeManager/AppointmentTypeManager.module.css
+- [X] T029 Logging standard sweep: verify all new components use `createLogger` from src/utils/logger.ts and no direct `console.*` calls exist in any new src/ files
+- [X] T030 [P] Add a navigation breadcrumb/back link on src/app/settings/page.tsx so users can return to the calendar from the settings page
 
 ---
 
@@ -159,98 +179,80 @@ All source code lives under `src/` with Next.js App Router at `src/app/`. Tests 
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies — start immediately.
-- **Foundational (Phase 2)**: Depends on Phase 1 completion — **BLOCKS all user story phases**.
-- **US1 (Phase 3)**: Depends on Phase 2 — first story, no story-level dependencies.
-- **US2 (Phase 4)**: Depends on Phase 2 — navigation actions are already in the reducer from Phase 2; extends Phase 3 UI.
-- **US3 (Phase 5)**: Depends on Phase 2 — form and addAppointment are independent of US2; can overlap with US2 if staffed separately.
-- **US4 (Phase 6)**: Depends on Phase 2 — deleteAppointment is in the reducer; AppointmentDetail is an independent component.
-- **Polish (Phase 7)**: Depends on all desired stories being complete.
+- **Foundational (Phase 1)**: No dependencies — start immediately. **BLOCKS all user story phases.**
+- **US1 (Phase 2)**: Depends on Phase 1.
+- **US2 (Phase 3)**: Depends on Phase 1 — settings page and ScheduleConfig are independent of US1's UI components.
+- **US3 (Phase 4)**: Depends on Phase 1 (series generation in reducer) AND US1 (type selector for sessions input).
+- **US4 (Phase 5)**: Depends on Phase 1 (DELETE_SERIES action) AND US3 (series appointments must exist).
+- **Polish (Phase 6)**: Depends on all stories complete.
 
 ### User Story Dependencies
 
-- **US1 (P1)**: No dependencies on other stories — start after Phase 2.
-- **US2 (P2)**: No dependencies on US1 at the code level (nav actions are in the reducer); extends CalendarHeader wiring.
-- **US3 (P3)**: No dependencies on US2 — AppointmentForm is a new component; addAppointment is already in the reducer.
-- **US4 (P4)**: No dependencies on US3 — AppointmentDetail is a new component; deleteAppointment is already in the reducer.
+- **US1 (P1)**: No story-level dependencies — can start after Phase 1.
+- **US2 (P2)**: No dependency on US1 — ScheduleConfig is independent. Can work in parallel with US1.
+- **US3 (P3)**: Depends on US1 (type with `repeatable=true` drives the sessions field).
+- **US4 (P4)**: Depends on US3 (series appointments must exist to test series management).
 
 ### Within Each User Story
 
 1. Write tests FIRST — verify they FAIL before writing implementation.
-2. Implement components and wiring.
+2. Implement components, reducer extensions, and wiring.
 3. Add analytics + logging calls.
 4. Verify the story's integration test passes.
-5. Commit before moving to the next story.
 
 ---
 
 ## Parallel Opportunities
 
-### Phase 1 — can all run in parallel after T001:
+### Phase 1 — T002/T003 can run in parallel with T004/T005 after T001:
 ```
-T002  Configure ESLint + Prettier
-T003  Configure Vitest + RTL
-T004  Configure Playwright
-T005  Add globals.css base styles
-```
-
-### Phase 2 — T007/T008 and T012/T013 can start immediately after T006:
-```
-T007  Implement dateUtils          T012  Implement logger utility
-T008  Write dateUtils tests        T013  Initialize Firebase Analytics
-T011  Write useAppointments tests
+T002  Implement scheduleUtils.ts
+T003  Write scheduleUtils tests
+                                    (then)
+T004  Extend AppointmentContext     ← depends on T001 + T002 (uses scheduleUtils)
+T005  Extend useAppointments hook   ← depends on T004
 ```
 
-### Per User Story — tests and non-blocking tasks run in parallel:
+### US1 + US2 can run in parallel after Phase 1:
 ```
-# US1 example:
-T015  Write Calendar unit tests
-T016  Write view-calendar integration test
-# (then implement T017 → T018 → T019 → T020 → T021 sequentially)
+Dev A: T006 → T007 → T008 → T009 → T010 → T011  (US1 — Types)
+Dev B: T012 → T013 → T014 → T015 → T016 → T017 → T018  (US2 — Schedule)
+```
 
-# US3 example:
-T027  Write AppointmentForm unit tests
-T028  Write add-appointment integration test
-# (then implement T029 → T030 → T031 sequentially)
+### US3 tests can run in parallel with implementation:
+```
+T019  Write repeatable integration test  (parallel with T020/T021)
+T020  Wire addAppointmentSeries in page
+T021  Add series badge to CalendarDay
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### MVP First (US1 Only)
 
-1. Complete Phase 1: Setup (T001–T005)
-2. Complete Phase 2: Foundational (T006–T014) — **CRITICAL, blocks everything**
-3. Complete Phase 3: User Story 1 (T015–T021)
-4. **STOP and VALIDATE**: run `npm run test` + `npm run test:e2e` for US1 only
-5. Demo or deploy the read-only calendar view
+1. Complete Phase 1: Foundational (T001–T005)
+2. Complete Phase 2: US1 Appointment Types (T006–T011)
+3. **STOP and VALIDATE**: appointment form shows type selector with default types
+4. Demo: receptionist can now categorize appointments
 
 ### Incremental Delivery
 
-1. Phase 1 + Phase 2 → Core infrastructure ready
-2. Phase 3 (US1) → Calendar renders; independently testable → **MVP checkpoint**
-3. Phase 4 (US2) → Navigation works; both US1 + US2 testable
-4. Phase 5 (US3) → Appointments can be added; US1 + US2 + US3 testable
-5. Phase 6 (US4) → Appointments can be deleted; full CRUD testable
-6. Phase 7 → Polish, performance, accessibility, logging standard sign-off
-
-### Parallel Team Strategy
-
-With multiple developers after Phase 2 completes:
-- **Dev A**: US1 (Phase 3)
-- **Dev B**: US2 (Phase 4)
-- **Dev C**: US3 + US4 (Phases 5–6, sequentially)
-
-Each developer works on their own component files with no file-level conflicts.
+1. Phase 1 → Data model extended, reducer handles new actions
+2. Phase 2 (US1) → Type selector in form; settings panel for type management → **MVP+**
+3. Phase 3 (US2) → Schedule config; out-of-schedule warnings in form
+4. Phase 4 (US3) → Repeatable series generation; series badges on calendar
+5. Phase 5 (US4) → Series management (view/delete full series)
+6. Phase 6 → Polish
 
 ---
 
 ## Notes
 
-- `[P]` marks tasks that touch different files with no unresolved dependencies — safe to run in parallel.
-- `[USn]` maps the task to a specific user story for traceability.
-- Firebase Analytics (T013, T021, T026, T031, T036) requires a `.env.local` file with `NEXT_PUBLIC_FIREBASE_*` environment variables; document these in quickstart.md as part of T040.
-- The logging utility (T012) must be the only way to emit console output in `src/` — direct `console.*` calls are banned per the logging standard sweep in T039.
-- Each user story phase should be independently completable and testable without depending on features from later story phases.
-- Commit after each story phase or logical group of tasks.
+- All tasks build on top of the already-complete MVP (view calendar, navigate months, add/delete individual appointments).
+- `typeId` is required on every new appointment; the default type to pre-select in the form should be the first `AppointmentType` in state (avoids null `typeId` for existing sessions).
+- When `DELETE_APPOINTMENT_TYPE` is dispatched for a type that has existing appointments, those appointments retain their `typeId` value but the type name becomes unresolvable — handle gracefully in components (fall back to "Unknown type").
+- `generateSeriesDates` must skip dates that fall on disabled days — if a Monday is selected and Mon is enabled, day 1 is Monday, day 2 is Tuesday, etc., skipping any weekends or other disabled days.
+- Firebase Analytics events for new actions: `appointment_type_created`, `schedule_config_updated`, `appointment_series_created`, `appointment_series_deleted`.
+- The logging utility is already in src/utils/logger.ts — all new components must use `createLogger(moduleName)`.

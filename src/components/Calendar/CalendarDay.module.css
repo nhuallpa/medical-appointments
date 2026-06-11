@@ -25,6 +25,14 @@
   border-color: var(--color-today-border);
 }
 
+.unavailable {
+  background: var(--color-bg);
+}
+
+.unavailable .dayNumber {
+  color: var(--color-text-muted);
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -36,6 +44,16 @@
   font-weight: 600;
   color: var(--color-text);
   line-height: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.dayNumber:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .today .dayNumber {

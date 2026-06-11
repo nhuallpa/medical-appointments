@@ -9,6 +9,7 @@ import type {
   AppointmentType,
 } from "@/types/appointment";
 import { generateSeriesDates, getDefaultSchedule } from "@/utils/scheduleUtils";
+import { toDateKey } from "@/utils/dateUtils";
 
 const today = new Date();
 
@@ -37,7 +38,14 @@ const initialState: AppointmentState = {
   currentYear: today.getFullYear(),
   currentMonth: today.getMonth(),
   selectedAppointment: null,
+  viewMode: "calendar",
+  currentDate: toDateKey(today),
 };
+
+function dateKeyToDate(dateKey: string): Date {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
 
 function buildAppointment(data: AppointmentFormData, overrides: Partial<Appointment> = {}): Appointment {
   return {
@@ -132,6 +140,26 @@ export function reducer(state: AppointmentState, action: AppointmentAction): App
         ...state,
         scheduleConfig: { ...state.scheduleConfig, ...action.payload },
       };
+
+    case "SET_VIEW_MODE":
+      return { ...state, viewMode: action.payload.mode };
+
+    case "SET_CURRENT_DATE": {
+      const { date } = action.payload;
+      const d = dateKeyToDate(date);
+      return { ...state, currentDate: date, currentYear: d.getFullYear(), currentMonth: d.getMonth() };
+    }
+
+    case "NAVIGATE_DAY": {
+      const d = dateKeyToDate(state.currentDate);
+      d.setDate(d.getDate() + (action.payload.direction === "next" ? 1 : -1));
+      return {
+        ...state,
+        currentDate: toDateKey(d),
+        currentYear: d.getFullYear(),
+        currentMonth: d.getMonth(),
+      };
+    }
 
     default:
       return state;

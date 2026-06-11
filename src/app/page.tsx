@@ -3,11 +3,14 @@
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Calendar } from "@/components/Calendar/Calendar";
+import { DayView } from "@/components/DayView/DayView";
+import { ViewTabs } from "@/components/ViewTabs/ViewTabs";
 import { AppointmentForm } from "@/components/AppointmentForm/AppointmentForm";
 import { AppointmentDetail } from "@/components/AppointmentDetail/AppointmentDetail";
 import { useAppointments } from "@/hooks/useAppointments";
 import { logPageView, logAppointmentSeriesCreated } from "@/lib/analytics";
 import { createLogger } from "@/utils/logger";
+import { toDateKey } from "@/utils/dateUtils";
 import type { Appointment, AppointmentFormData } from "@/types/appointment";
 import styles from "./page.module.css";
 
@@ -24,10 +27,17 @@ export default function Home() {
     selectedAppointment,
     appointmentTypes,
     scheduleConfig,
+    viewMode,
+    setViewMode,
+    currentDate,
+    setCurrentDate,
+    navigateDay,
+    timeSlots,
   } = useAppointments();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formInitialDate, setFormInitialDate] = useState<string | undefined>(undefined);
+  const [formInitialTime, setFormInitialTime] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     logPageView("calendar");
@@ -36,8 +46,21 @@ export default function Home() {
 
   const handleAddClick = useCallback((date: string) => {
     setFormInitialDate(date);
+    setFormInitialTime(undefined);
     setFormOpen(true);
   }, []);
+
+  const handleSlotAddClick = useCallback((date: string, time: string) => {
+    setFormInitialDate(date);
+    setFormInitialTime(time);
+    setFormOpen(true);
+  }, []);
+
+  const handlePrevDay = useCallback(() => navigateDay("prev"), [navigateDay]);
+  const handleNextDay = useCallback(() => navigateDay("next"), [navigateDay]);
+  const handleDayToday = useCallback(() => {
+    setCurrentDate(toDateKey(new Date()));
+  }, [setCurrentDate]);
 
   const handleFormSubmit = useCallback(
     async (data: AppointmentFormData) => {
@@ -55,6 +78,7 @@ export default function Home() {
 
       setFormOpen(false);
       setFormInitialDate(undefined);
+      setFormInitialTime(undefined);
     },
     [addAppointment, addAppointmentSeries, appointmentTypes]
   );
@@ -62,6 +86,7 @@ export default function Home() {
   const handleFormCancel = useCallback(() => {
     setFormOpen(false);
     setFormInitialDate(undefined);
+    setFormInitialTime(undefined);
   }, []);
 
   const handleAppointmentClick = useCallback(
@@ -96,11 +121,27 @@ export default function Home() {
         </Link>
       </div>
 
-      <Calendar onAddClick={handleAddClick} onAppointmentClick={handleAppointmentClick} />
+      <ViewTabs active={viewMode} onChange={setViewMode} />
+
+      {viewMode === "calendar" ? (
+        <Calendar onAddClick={handleAddClick} onAppointmentClick={handleAppointmentClick} />
+      ) : (
+        <DayView
+          date={currentDate}
+          timeSlots={timeSlots}
+          appointmentTypes={appointmentTypes}
+          onPrevDay={handlePrevDay}
+          onNextDay={handleNextDay}
+          onToday={handleDayToday}
+          onAddClick={handleSlotAddClick}
+          onAppointmentClick={handleAppointmentClick}
+        />
+      )}
 
       {formOpen && (
         <AppointmentForm
           initialDate={formInitialDate}
+          initialTime={formInitialTime}
           appointmentTypes={appointmentTypes}
           scheduleConfig={scheduleConfig}
           onSubmit={handleFormSubmit}

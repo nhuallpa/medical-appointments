@@ -5,7 +5,22 @@ import {
   isTimeInRange,
   isPastDate,
   generateSeriesDates,
+  generateTimeSlots,
 } from "@/utils/scheduleUtils";
+import type { Appointment } from "@/types/appointment";
+
+function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
+  return {
+    id: `appt-${Math.random()}`,
+    patientName: "Ana García",
+    professionalName: "Dr. López",
+    date: "2026-06-10",
+    time: "09:00",
+    typeId: "type-general",
+    createdAt: "2026-06-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
 
 describe("getDefaultSchedule", () => {
   it("returns Mon-Fri as enabled days", () => {
@@ -16,6 +31,10 @@ describe("getDefaultSchedule", () => {
     const s = getDefaultSchedule();
     expect(s.startTime).toBe("08:00");
     expect(s.endTime).toBe("18:00");
+  });
+
+  it("returns a 30-minute slot interval by default", () => {
+    expect(getDefaultSchedule().slotIntervalMinutes).toBe(30);
   });
 });
 
@@ -125,5 +144,62 @@ describe("generateSeriesDates", () => {
 
   it("returns empty array when no days enabled", () => {
     expect(generateSeriesDates("2026-06-01", 3, [])).toEqual([]);
+  });
+});
+
+describe("generateTimeSlots", () => {
+  it("generates evenly-spaced slots covering the full range", () => {
+    const slots = generateTimeSlots("08:00", "18:00", 30, []);
+    expect(slots).toHaveLength(20);
+    expect(slots[0].time).toBe("08:00");
+    expect(slots[slots.length - 1].time).toBe("17:30");
+  });
+
+  it("includes a final shorter slot when the interval does not evenly divide the range", () => {
+    const slots = generateTimeSlots("08:00", "08:45", 30, []);
+    expect(slots.map((s) => s.time)).toEqual(["08:00", "08:30"]);
+  });
+
+  it("returns an empty array when startTime equals endTime", () => {
+    expect(generateTimeSlots("08:00", "08:00", 30, [])).toEqual([]);
+  });
+
+  it("returns an empty array when startTime is after endTime", () => {
+    expect(generateTimeSlots("18:00", "08:00", 30, [])).toEqual([]);
+  });
+
+  it("returns an empty array when intervalMinutes is 0 or negative", () => {
+    expect(generateTimeSlots("08:00", "18:00", 0, [])).toEqual([]);
+    expect(generateTimeSlots("08:00", "18:00", -15, [])).toEqual([]);
+  });
+
+  it("assigns an appointment to the slot whose time matches exactly", () => {
+    const appt = makeAppointment({ time: "09:00" });
+    const slots = generateTimeSlots("08:00", "18:00", 30, [appt]);
+    const slot = slots.find((s) => s.time === "09:00");
+    expect(slot?.appointments).toEqual([appt]);
+  });
+
+  it("assigns an appointment to the latest slot whose time is <= the appointment time", () => {
+    const appt = makeAppointment({ time: "09:15" });
+    const slots = generateTimeSlots("08:00", "18:00", 30, [appt]);
+    const slot900 = slots.find((s) => s.time === "09:00");
+    const slot930 = slots.find((s) => s.time === "09:30");
+    expect(slot900?.appointments).toEqual([appt]);
+    expect(slot930?.appointments).toEqual([]);
+  });
+
+  it("assigns an appointment earlier than the first slot to the first slot", () => {
+    const appt = makeAppointment({ time: "07:00" });
+    const slots = generateTimeSlots("08:00", "18:00", 30, [appt]);
+    expect(slots[0].appointments).toEqual([appt]);
+  });
+
+  it("groups multiple appointments within the same slot", () => {
+    const appt1 = makeAppointment({ id: "a1", time: "10:05" });
+    const appt2 = makeAppointment({ id: "a2", time: "10:25" });
+    const slots = generateTimeSlots("08:00", "18:00", 30, [appt1, appt2]);
+    const slot = slots.find((s) => s.time === "10:00");
+    expect(slot?.appointments).toEqual([appt1, appt2]);
   });
 });

@@ -1,4 +1,4 @@
-import type { ScheduleConfig } from "@/types/appointment";
+import type { Appointment, ScheduleConfig, TimeSlot } from "@/types/appointment";
 import { toDateKey } from "./dateUtils";
 
 export function getDefaultSchedule(): ScheduleConfig {
@@ -6,7 +6,57 @@ export function getDefaultSchedule(): ScheduleConfig {
     enabledDays: [1, 2, 3, 4, 5], // Mon–Fri
     startTime: "08:00",
     endTime: "18:00",
+    slotIntervalMinutes: 30,
   };
+}
+
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/**
+ * Generates time slots from startTime (inclusive) to endTime (exclusive), stepping by
+ * intervalMinutes. The final slot is included even if it covers a shorter period than
+ * intervalMinutes. Each appointment is assigned to the latest slot whose time is
+ * <= the appointment's time, or to the first slot if it is earlier than all slots.
+ * Returns [] if startTime >= endTime or intervalMinutes <= 0.
+ */
+export function generateTimeSlots(
+  startTime: string,
+  endTime: string,
+  intervalMinutes: number,
+  appointments: Appointment[]
+): TimeSlot[] {
+  const startMinutes = timeToMinutes(startTime);
+  const endMinutes = timeToMinutes(endTime);
+  if (intervalMinutes <= 0 || startMinutes >= endMinutes) return [];
+
+  const slots: TimeSlot[] = [];
+  for (let m = startMinutes; m < endMinutes; m += intervalMinutes) {
+    slots.push({ time: minutesToTime(m), appointments: [] });
+  }
+
+  for (const appt of appointments) {
+    const apptMinutes = timeToMinutes(appt.time);
+    let target = slots[0];
+    for (const slot of slots) {
+      if (timeToMinutes(slot.time) <= apptMinutes) {
+        target = slot;
+      } else {
+        break;
+      }
+    }
+    target.appointments.push(appt);
+  }
+
+  return slots;
 }
 
 export function isDateEnabled(dateKey: string, enabledDays: number[]): boolean {
