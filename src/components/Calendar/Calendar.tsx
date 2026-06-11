@@ -16,7 +16,7 @@ interface CalendarProps {
 }
 
 export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
-  const { appointments, currentYear, currentMonth, navigateMonth, goToToday } = useAppointments();
+  const { appointments, appointmentTypes, currentYear, currentMonth, navigateMonth, goToToday } = useAppointments();
 
   const grid = generateMonthGrid(currentYear, currentMonth, appointments);
 
@@ -55,6 +55,7 @@ export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
             date={cell.date}
             isToday={cell.isToday}
             appointments={cell.appointments}
+            appointmentTypes={appointmentTypes}
             onAddClick={onAddClick}
             onAppointmentClick={onAppointmentClick}
           />

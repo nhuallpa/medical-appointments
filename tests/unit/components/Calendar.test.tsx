@@ -3,7 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalendarDay } from "@/components/Calendar/CalendarDay";
 import { CalendarHeader } from "@/components/Calendar/CalendarHeader";
-import type { Appointment } from "@/types/appointment";
+import type { Appointment, AppointmentType } from "@/types/appointment";
+
+const mockTypes: AppointmentType[] = [
+  { id: "t-dental", name: "Dental", repeatable: false, maxSessions: 1, color: "#3b82f6" },
+];
 
 const mockAppt: Appointment = {
   id: "appt-1",
@@ -11,6 +15,7 @@ const mockAppt: Appointment = {
   professionalName: "Dr. López",
   date: "2026-06-10",
   time: "09:00",
+  typeId: "t-dental",
   createdAt: "2026-06-01T00:00:00.000Z",
 };
 
@@ -23,6 +28,7 @@ describe("CalendarDay", () => {
         date="2026-06-10"
         isToday={false}
         appointments={[]}
+        appointmentTypes={mockTypes}
         onAddClick={vi.fn()}
         onAppointmentClick={vi.fn()}
       />
@@ -36,6 +42,7 @@ describe("CalendarDay", () => {
         date={null}
         isToday={false}
         appointments={[]}
+        appointmentTypes={mockTypes}
         onAddClick={vi.fn()}
         onAppointmentClick={vi.fn()}
       />
@@ -49,6 +56,7 @@ describe("CalendarDay", () => {
         date="2026-06-10"
         isToday={false}
         appointments={[mockAppt]}
+        appointmentTypes={mockTypes}
         onAddClick={vi.fn()}
         onAppointmentClick={vi.fn()}
       />
@@ -64,6 +72,7 @@ describe("CalendarDay", () => {
         date="2026-06-10"
         isToday={false}
         appointments={[mockAppt]}
+        appointmentTypes={mockTypes}
         onAddClick={vi.fn()}
         onAppointmentClick={onAppointmentClick}
       />
@@ -79,6 +88,7 @@ describe("CalendarDay", () => {
         date="2026-06-10"
         isToday={false}
         appointments={[]}
+        appointmentTypes={mockTypes}
         onAddClick={onAddClick}
         onAppointmentClick={vi.fn()}
       />
@@ -94,6 +104,7 @@ describe("CalendarDay", () => {
         date="2026-06-10"
         isToday={true}
         appointments={[]}
+        appointmentTypes={mockTypes}
         onAddClick={vi.fn()}
         onAppointmentClick={vi.fn()}
       />

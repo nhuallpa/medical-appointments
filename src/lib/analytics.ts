@@ -67,3 +67,19 @@ export async function logAppointmentCreated(date: string) {
 export async function logAppointmentDeleted(id: string) {
   await track("appointment_deleted", { appointment_id: id });
 }
+
+export async function logAppointmentTypeCreated(name: string) {
+  await track("appointment_type_created", { type_name: name });
+}
+
+export async function logAppointmentSeriesCreated(typeId: string, sessions: number) {
+  await track("appointment_series_created", { type_id: typeId, sessions });
+}
+
+export async function logAppointmentSeriesDeleted(seriesId: string) {
+  await track("appointment_series_deleted", { series_id: seriesId });
+}
+
+export async function logScheduleConfigUpdated() {
+  await track("schedule_config_updated");
+}
