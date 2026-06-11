@@ -28,11 +28,19 @@ describe("toDateKey", () => {
 
 describe("formatMonthLabel", () => {
   it("returns month name and year", () => {
-    expect(formatMonthLabel(2026, 5)).toBe("June 2026");
+    expect(formatMonthLabel(2026, 5, "en")).toBe("June 2026");
   });
 
   it("handles January correctly", () => {
-    expect(formatMonthLabel(2026, 0)).toBe("January 2026");
+    expect(formatMonthLabel(2026, 0, "en")).toBe("January 2026");
+  });
+
+  it("formats in Spanish", () => {
+    expect(formatMonthLabel(2026, 5, "es")).toBe("junio de 2026");
+  });
+
+  it("formats in Portuguese", () => {
+    expect(formatMonthLabel(2026, 5, "pt")).toBe("junho de 2026");
   });
 });
 

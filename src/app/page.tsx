@@ -7,7 +7,9 @@ import { DayView } from "@/components/DayView/DayView";
 import { ViewTabs } from "@/components/ViewTabs/ViewTabs";
 import { AppointmentForm } from "@/components/AppointmentForm/AppointmentForm";
 import { AppointmentDetail } from "@/components/AppointmentDetail/AppointmentDetail";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher/LanguageSwitcher";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useTranslation } from "@/i18n/LocaleContext";
 import { logPageView, logAppointmentSeriesCreated } from "@/lib/analytics";
 import { createLogger } from "@/utils/logger";
 import { toDateKey } from "@/utils/dateUtils";
@@ -34,6 +36,7 @@ export default function Home() {
     navigateDay,
     timeSlots,
   } = useAppointments();
+  const { t } = useTranslation();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formInitialDate, setFormInitialDate] = useState<string | undefined>(undefined);
@@ -116,8 +119,9 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <div className={styles.topBar}>
+        <LanguageSwitcher />
         <Link href="/settings" className={styles.settingsLink}>
-          ⚙ Settings
+          ⚙ {t("nav.settings")}
         </Link>
       </div>
 

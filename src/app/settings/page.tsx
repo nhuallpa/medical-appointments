@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentTypeManager } from "@/components/AppointmentTypeManager/AppointmentTypeManager";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher/LanguageSwitcher";
 import { ScheduleConfig } from "@/components/ScheduleConfig/ScheduleConfig";
+import { useTranslation } from "@/i18n/LocaleContext";
 import { createLogger } from "@/utils/logger";
 import styles from "./settings.module.css";
 
 const logger = createLogger("SettingsPage");
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const {
     appointmentTypes,
     scheduleConfig,
@@ -21,14 +24,15 @@ export default function SettingsPage() {
   return (
     <main className={styles.main}>
       <div className={styles.header}>
-        <Link href="/" className={styles.backLink} aria-label="Back to calendar">
-          ← Back to Calendar
+        <Link href="/" className={styles.backLink} aria-label={t("settings.backToCalendarAriaLabel")}>
+          ← {t("settings.backToCalendar")}
         </Link>
-        <h1 className={styles.title}>Settings</h1>
+        <h1 className={styles.title}>{t("settings.title")}</h1>
+        <LanguageSwitcher />
       </div>
 
       <div className={styles.panels}>
-        <section aria-label="Appointment types">
+        <section aria-label={t("appointmentTypeManager.title")}>
           <AppointmentTypeManager
             types={appointmentTypes}
             onAdd={(type) => {
@@ -42,7 +46,7 @@ export default function SettingsPage() {
           />
         </section>
 
-        <section aria-label="Schedule configuration">
+        <section aria-label={t("scheduleConfig.title")}>
           <ScheduleConfig
             config={scheduleConfig}
             onSave={(config) => {

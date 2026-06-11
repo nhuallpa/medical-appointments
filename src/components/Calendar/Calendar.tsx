@@ -2,14 +2,13 @@
 
 import { useCallback } from "react";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useTranslation } from "@/i18n/LocaleContext";
 import { generateMonthGrid } from "@/utils/dateUtils";
 import { isDateEnabled } from "@/utils/scheduleUtils";
 import { CalendarHeader } from "./CalendarHeader";
 import { CalendarDay } from "./CalendarDay";
 import type { Appointment } from "@/types/appointment";
 import styles from "./Calendar.module.css";
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface CalendarProps {
   onAddClick: (date: string) => void;
@@ -27,6 +26,7 @@ export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
     goToToday,
     setCurrentDate,
   } = useAppointments();
+  const { t, messages } = useTranslation();
 
   const grid = generateMonthGrid(currentYear, currentMonth, appointments);
 
@@ -40,8 +40,8 @@ export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
     <div className={styles.wrapper}>
       {!hasAppointments && (
         <p className={styles.emptyState}>
-          No appointments yet —{" "}
-          <span>click any date to add an appointment</span>
+          {t("calendar.emptyStatePrefix")}{" "}
+          <span>{t("calendar.emptyStateAction")}</span>
         </p>
       )}
       <CalendarHeader
@@ -53,7 +53,7 @@ export function Calendar({ onAddClick, onAppointmentClick }: CalendarProps) {
       />
 
       <div className={styles.grid}>
-        {WEEKDAYS.map((day) => (
+        {messages.calendar.weekdays.map((day) => (
           <div key={day} className={styles.weekdayHeader} data-testid="weekday-header">
             {day}
           </div>

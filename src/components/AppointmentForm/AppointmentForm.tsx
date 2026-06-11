@@ -6,6 +6,7 @@ import { isPastDate, isDateEnabled, isTimeInRange } from "@/utils/scheduleUtils"
 import { toDateKey } from "@/utils/dateUtils";
 import { logAppointmentCreated } from "@/lib/analytics";
 import { createLogger } from "@/utils/logger";
+import { useTranslation } from "@/i18n/LocaleContext";
 import styles from "./AppointmentForm.module.css";
 
 const logger = createLogger("AppointmentForm");
@@ -38,6 +39,7 @@ export function AppointmentForm({
   onSubmit,
   onCancel,
 }: AppointmentFormProps) {
+  const { t } = useTranslation();
   const defaultType = appointmentTypes[0] ?? null;
 
   const [patientName, setPatientName] = useState("");
@@ -82,27 +84,30 @@ export function AppointmentForm({
   const scheduleWarnings: string[] = [];
   if (date) {
     if (!isDateEnabled(date, scheduleConfig.enabledDays)) {
-      scheduleWarnings.push("This day is not within configured consultation days.");
+      scheduleWarnings.push(t("validation.dayNotAvailable"));
     }
   }
   if (time) {
     if (!isTimeInRange(time, scheduleConfig.startTime, scheduleConfig.endTime)) {
       scheduleWarnings.push(
-        `Time is outside consultation hours (${scheduleConfig.startTime}–${scheduleConfig.endTime}).`
+        t("validation.timeOutsideHours", {
+          start: scheduleConfig.startTime,
+          end: scheduleConfig.endTime,
+        })
       );
     }
   }
 
   const validate = (): FormErrors => {
     const errs: FormErrors = {};
-    if (!patientName.trim()) errs.patientName = "Patient name is required";
-    if (!professionalName.trim()) errs.professionalName = "Professional name is required";
+    if (!patientName.trim()) errs.patientName = t("validation.patientNameRequired");
+    if (!professionalName.trim()) errs.professionalName = t("validation.professionalNameRequired");
     if (!date) {
-      errs.date = "Date is required";
+      errs.date = t("validation.dateRequired");
     } else if (isPastDate(date)) {
-      errs.date = "Date cannot be in the past";
+      errs.date = t("validation.dateInPast");
     }
-    if (!time) errs.time = "Time is required";
+    if (!time) errs.time = t("validation.timeRequired");
     return errs;
   };
 
@@ -142,14 +147,14 @@ export function AppointmentForm({
     >
       <div className={styles.modal}>
         <h2 id="form-title" className={styles.title}>
-          New Appointment
+          {t("appointmentForm.title")}
         </h2>
 
         <form onSubmit={handleSubmit} noValidate>
           {/* Patient Name */}
           <div className={styles.field}>
             <label htmlFor="patientName" className={styles.label}>
-              Patient Name <span className={styles.required}>*</span>
+              {t("appointmentForm.patientName")} <span className={styles.required}>*</span>
             </label>
             <input
               id="patientName"
@@ -171,7 +176,7 @@ export function AppointmentForm({
           {/* Professional Name */}
           <div className={styles.field}>
             <label htmlFor="professionalName" className={styles.label}>
-              Professional Name <span className={styles.required}>*</span>
+              {t("appointmentForm.professionalName")} <span className={styles.required}>*</span>
             </label>
             <input
               id="professionalName"
@@ -192,14 +197,14 @@ export function AppointmentForm({
           {/* Appointment Type */}
           <div className={styles.field}>
             <label htmlFor="appointmentType" className={styles.label}>
-              Appointment Type <span className={styles.required}>*</span>
+              {t("appointmentForm.appointmentType")} <span className={styles.required}>*</span>
             </label>
             <select
               id="appointmentType"
               className={styles.input}
               value={typeId}
               onChange={(e) => setTypeId(e.target.value)}
-              aria-label="Appointment type"
+              aria-label={t("appointmentForm.appointmentType")}
             >
               {appointmentTypes.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -213,7 +218,7 @@ export function AppointmentForm({
           {isRepeatable && (
             <div className={styles.field}>
               <label htmlFor="sessions" className={styles.label}>
-                Sessions <span className={styles.required}>*</span>
+                {t("appointmentForm.sessions")} <span className={styles.required}>*</span>
               </label>
               <input
                 id="sessions"
@@ -223,11 +228,18 @@ export function AppointmentForm({
                 min={1}
                 max={selectedType?.maxSessions ?? 10}
                 onChange={(e) => setSessions(Number(e.target.value))}
-                aria-label="Number of sessions"
+                aria-label={t("appointmentForm.numberOfSessions")}
               />
               <span className={styles.hint}>
-                {sessions} session{sessions !== 1 ? "s" : ""} on consecutive available days (max{" "}
-                {selectedType?.maxSessions})
+                {sessions === 1
+                  ? t("appointmentForm.sessionsHintSingular", {
+                      sessions,
+                      max: selectedType?.maxSessions ?? 0,
+                    })
+                  : t("appointmentForm.sessionsHintPlural", {
+                      sessions,
+                      max: selectedType?.maxSessions ?? 0,
+                    })}
               </span>
             </div>
           )}
@@ -236,7 +248,8 @@ export function AppointmentForm({
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="date" className={styles.label}>
-                {isRepeatable ? "Start Date" : "Date"} <span className={styles.required}>*</span>
+                {isRepeatable ? t("appointmentForm.startDate") : t("appointmentForm.date")}{" "}
+                <span className={styles.required}>*</span>
               </label>
               <input
                 id="date"
@@ -255,7 +268,7 @@ export function AppointmentForm({
 
             <div className={styles.field}>
               <label htmlFor="time" className={styles.label}>
-                Time <span className={styles.required}>*</span>
+                {t("appointmentForm.time")} <span className={styles.required}>*</span>
               </label>
               <input
                 id="time"
@@ -284,7 +297,7 @@ export function AppointmentForm({
           {/* Notes */}
           <div className={styles.field}>
             <label htmlFor="notes" className={styles.label}>
-              Notes
+              {t("appointmentForm.notes")}
             </label>
             <textarea
               id="notes"
@@ -298,10 +311,12 @@ export function AppointmentForm({
 
           <div className={styles.actions}>
             <button type="button" className={styles.cancelBtn} onClick={onCancel}>
-              Cancel
+              {t("common.cancel")}
             </button>
             <button type="submit" className={styles.saveBtn}>
-              {isRepeatable && sessions > 1 ? `Save ${sessions} Sessions` : "Save"}
+              {isRepeatable && sessions > 1
+                ? t("appointmentForm.saveSessions", { sessions })
+                : t("common.save")}
             </button>
           </div>
         </form>

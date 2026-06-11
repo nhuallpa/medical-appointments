@@ -1,6 +1,7 @@
 "use client";
 
 import { formatMonthLabel } from "@/utils/dateUtils";
+import { useTranslation } from "@/i18n/LocaleContext";
 import { logMonthNavigated } from "@/lib/analytics";
 import { createLogger } from "@/utils/logger";
 import styles from "./CalendarHeader.module.css";
@@ -16,6 +17,8 @@ interface CalendarHeaderProps {
 }
 
 export function CalendarHeader({ year, month, onPrev, onNext, onToday }: CalendarHeaderProps) {
+  const { t, locale } = useTranslation();
+
   const handlePrev = () => {
     logMonthNavigated("prev");
     logger.debug("navigated prev");
@@ -36,15 +39,15 @@ export function CalendarHeader({ year, month, onPrev, onNext, onToday }: Calenda
 
   return (
     <div className={styles.header}>
-      <h1 className={styles.title}>{formatMonthLabel(year, month)}</h1>
+      <h1 className={styles.title}>{formatMonthLabel(year, month, locale)}</h1>
       <div className={styles.controls}>
-        <button className={styles.navBtn} onClick={handlePrev} aria-label="Previous month">
+        <button className={styles.navBtn} onClick={handlePrev} aria-label={t("calendar.previousMonth")}>
           ‹
         </button>
-        <button className={styles.todayBtn} onClick={handleToday} aria-label="Go to today">
-          Today
+        <button className={styles.todayBtn} onClick={handleToday} aria-label={t("common.goToToday")}>
+          {t("common.today")}
         </button>
-        <button className={styles.navBtn} onClick={handleNext} aria-label="Next month">
+        <button className={styles.navBtn} onClick={handleNext} aria-label={t("calendar.nextMonth")}>
           ›
         </button>
       </div>

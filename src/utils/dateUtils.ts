@@ -1,4 +1,11 @@
 import type { Appointment, CalendarCell, CalendarGrid } from "@/types/appointment";
+import type { Locale } from "@/i18n/locale";
+
+const BCP47_TAGS: Record<Locale, string> = {
+  en: "en-US",
+  es: "es-ES",
+  pt: "pt-PT",
+};
 
 export function generateMonthGrid(
   year: number,
@@ -57,8 +64,8 @@ export function toDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function formatMonthLabel(year: number, month: number): string {
-  return new Date(year, month, 1).toLocaleDateString("en-US", {
+export function formatMonthLabel(year: number, month: number, locale: Locale): string {
+  return new Date(year, month, 1).toLocaleDateString(BCP47_TAGS[locale], {
     month: "long",
     year: "numeric",
   });
@@ -68,9 +75,9 @@ export function isToday(dateKey: string): boolean {
   return dateKey === toDateKey(new Date());
 }
 
-export function formatFullDateLabel(dateKey: string): string {
+export function formatFullDateLabel(dateKey: string, locale: Locale): string {
   const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+  return new Date(year, month - 1, day).toLocaleDateString(BCP47_TAGS[locale], {
     weekday: "long",
     month: "long",
     day: "numeric",

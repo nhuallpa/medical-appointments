@@ -4,11 +4,10 @@ import { useState } from "react";
 import type { ScheduleConfig as ScheduleConfigType } from "@/types/appointment";
 import { logScheduleConfigUpdated } from "@/lib/analytics";
 import { createLogger } from "@/utils/logger";
+import { useTranslation } from "@/i18n/LocaleContext";
 import styles from "./ScheduleConfig.module.css";
 
 const logger = createLogger("ScheduleConfig");
-
-const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 interface ScheduleConfigProps {
   config: ScheduleConfigType;
@@ -16,6 +15,7 @@ interface ScheduleConfigProps {
 }
 
 export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
+  const { t, messages } = useTranslation();
   const [enabledDays, setEnabledDays] = useState<number[]>(config.enabledDays);
   const [startTime, setStartTime] = useState(config.startTime);
   const [endTime, setEndTime] = useState(config.endTime);
@@ -36,12 +36,12 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.sectionTitle}>Schedule Configuration</h3>
+      <h3 className={styles.sectionTitle}>{t("scheduleConfig.title")}</h3>
 
       <div className={styles.section}>
-        <p className={styles.sectionLabel}>Available Days</p>
+        <p className={styles.sectionLabel}>{t("scheduleConfig.availableDays")}</p>
         <div className={styles.dayGrid}>
-          {DAY_LABELS.map((label, dow) => (
+          {messages.scheduleConfig.dayNames.map((label, dow) => (
             <label key={dow} className={styles.dayLabel}>
               <input
                 type="checkbox"
@@ -56,11 +56,11 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
       </div>
 
       <div className={styles.section}>
-        <p className={styles.sectionLabel}>Consultation Hours</p>
+        <p className={styles.sectionLabel}>{t("scheduleConfig.consultationHours")}</p>
         <div className={styles.timeRow}>
           <div className={styles.timeField}>
             <label htmlFor="startTime" className={styles.timeLabel}>
-              Start Time
+              {t("scheduleConfig.startTime")}
             </label>
             <input
               id="startTime"
@@ -73,7 +73,7 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
           <span className={styles.timeSep}>—</span>
           <div className={styles.timeField}>
             <label htmlFor="endTime" className={styles.timeLabel}>
-              End Time
+              {t("scheduleConfig.endTime")}
             </label>
             <input
               id="endTime"
@@ -85,7 +85,7 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
           </div>
           <div className={styles.timeField}>
             <label htmlFor="slotInterval" className={styles.timeLabel}>
-              Slot Interval
+              {t("scheduleConfig.slotInterval")}
             </label>
             <select
               id="slotInterval"
@@ -93,17 +93,21 @@ export function ScheduleConfig({ config, onSave }: ScheduleConfigProps) {
               value={slotIntervalMinutes}
               onChange={(e) => setSlotIntervalMinutes(Number(e.target.value))}
             >
-              <option value={15}>15 minutes</option>
-              <option value={30}>30 minutes</option>
-              <option value={45}>45 minutes</option>
-              <option value={60}>60 minutes</option>
+              <option value={15}>{t("scheduleConfig.minutes", { count: 15 })}</option>
+              <option value={30}>{t("scheduleConfig.minutes", { count: 30 })}</option>
+              <option value={45}>{t("scheduleConfig.minutes", { count: 45 })}</option>
+              <option value={60}>{t("scheduleConfig.minutes", { count: 60 })}</option>
             </select>
           </div>
         </div>
       </div>
 
-      <button className={styles.saveBtn} onClick={handleSave} aria-label="Save schedule configuration">
-        Save Configuration
+      <button
+        className={styles.saveBtn}
+        onClick={handleSave}
+        aria-label={t("scheduleConfig.saveConfigurationAriaLabel")}
+      >
+        {t("scheduleConfig.saveConfiguration")}
       </button>
     </div>
   );

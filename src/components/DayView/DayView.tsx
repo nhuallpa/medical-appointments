@@ -2,6 +2,7 @@
 
 import type { Appointment, AppointmentType, TimeSlot } from "@/types/appointment";
 import { formatFullDateLabel } from "@/utils/dateUtils";
+import { useLocale, useTranslation } from "@/i18n/LocaleContext";
 import styles from "./DayView.module.css";
 
 interface DayViewProps {
@@ -25,25 +26,28 @@ export function DayView({
   onAddClick,
   onAppointmentClick,
 }: DayViewProps) {
+  const { locale } = useLocale();
+  const { t } = useTranslation();
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
-        <h1 className={styles.title}>{formatFullDateLabel(date)}</h1>
+        <h1 className={styles.title}>{formatFullDateLabel(date, locale)}</h1>
         <div className={styles.controls}>
-          <button className={styles.navBtn} onClick={onPrevDay} aria-label="Previous day">
+          <button className={styles.navBtn} onClick={onPrevDay} aria-label={t("dayView.previousDay")}>
             ‹
           </button>
-          <button className={styles.todayBtn} onClick={onToday} aria-label="Go to today">
-            Today
+          <button className={styles.todayBtn} onClick={onToday} aria-label={t("common.goToToday")}>
+            {t("common.today")}
           </button>
-          <button className={styles.navBtn} onClick={onNextDay} aria-label="Next day">
+          <button className={styles.navBtn} onClick={onNextDay} aria-label={t("dayView.nextDay")}>
             ›
           </button>
         </div>
       </div>
 
       {timeSlots.length === 0 ? (
-        <p className={styles.emptyState}>No time slots configured for this day.</p>
+        <p className={styles.emptyState}>{t("dayView.noSlotsConfigured")}</p>
       ) : (
         <ul className={styles.slotList}>
           {timeSlots.map((slot) => (
@@ -68,10 +72,10 @@ export function DayView({
                 <button
                   className={styles.addBtn}
                   onClick={() => onAddClick(date, slot.time)}
-                  aria-label={`Add appointment at ${slot.time}`}
-                  title="Add appointment"
+                  aria-label={t("dayView.addAppointmentAt", { time: slot.time })}
+                  title={t("common.addAppointment")}
                 >
-                  + Add appointment
+                  {t("dayView.addAppointmentButton")}
                 </button>
               </div>
             </li>

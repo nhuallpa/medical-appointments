@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AppointmentType } from "@/types/appointment";
 import { logAppointmentTypeCreated } from "@/lib/analytics";
 import { createLogger } from "@/utils/logger";
+import { useTranslation } from "@/i18n/LocaleContext";
 import styles from "./AppointmentTypeManager.module.css";
 
 const logger = createLogger("AppointmentTypeManager");
@@ -15,6 +16,7 @@ interface AppointmentTypeManagerProps {
 }
 
 export function AppointmentTypeManager({ types, onAdd, onDelete }: AppointmentTypeManagerProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [repeatable, setRepeatable] = useState(false);
   const [maxSessions, setMaxSessions] = useState(5);
@@ -22,7 +24,7 @@ export function AppointmentTypeManager({ types, onAdd, onDelete }: AppointmentTy
 
   const handleAdd = async () => {
     if (!name.trim()) {
-      setNameError("Type name is required");
+      setNameError(t("validation.typeNameRequired"));
       return;
     }
     setNameError("");
@@ -37,38 +39,40 @@ export function AppointmentTypeManager({ types, onAdd, onDelete }: AppointmentTy
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.sectionTitle}>Appointment Types</h3>
+      <h3 className={styles.sectionTitle}>{t("appointmentTypeManager.title")}</h3>
 
       <ul className={styles.typeList}>
-        {types.map((t) => (
-          <li key={t.id} className={styles.typeItem}>
+        {types.map((type) => (
+          <li key={type.id} className={styles.typeItem}>
             <div className={styles.typeInfo}>
-              <span className={styles.typeName}>{t.name}</span>
-              {t.repeatable ? (
+              <span className={styles.typeName}>{type.name}</span>
+              {type.repeatable ? (
                 <span className={`${styles.badge} ${styles.badgeRepeatable}`}>
-                  Repeatable · {t.maxSessions} sessions
+                  {t("appointmentTypeManager.repeatableBadge", { max: type.maxSessions })}
                 </span>
               ) : (
-                <span className={`${styles.badge} ${styles.badgeIndividual}`}>Individual</span>
+                <span className={`${styles.badge} ${styles.badgeIndividual}`}>
+                  {t("appointmentTypeManager.individualBadge")}
+                </span>
               )}
             </div>
             <button
               className={styles.deleteBtn}
-              onClick={() => onDelete(t.id)}
-              aria-label={`Delete ${t.name}`}
+              onClick={() => onDelete(type.id)}
+              aria-label={t("appointmentTypeManager.deleteAriaLabel", { name: type.name })}
             >
-              Delete
+              {t("common.delete")}
             </button>
           </li>
         ))}
       </ul>
 
       <div className={styles.addForm}>
-        <h4 className={styles.addTitle}>Add New Type</h4>
+        <h4 className={styles.addTitle}>{t("appointmentTypeManager.addNewType")}</h4>
 
         <div className={styles.field}>
           <label htmlFor="typeName" className={styles.label}>
-            Type Name
+            {t("appointmentTypeManager.typeName")}
           </label>
           <input
             id="typeName"
@@ -76,7 +80,7 @@ export function AppointmentTypeManager({ types, onAdd, onDelete }: AppointmentTy
             className={`${styles.input} ${nameError ? styles.inputError : ""}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Physical Therapy"
+            placeholder={t("appointmentTypeManager.typeNamePlaceholder")}
             maxLength={60}
           />
           {nameError && <span className={styles.error} role="alert">{nameError}</span>}
@@ -90,14 +94,14 @@ export function AppointmentTypeManager({ types, onAdd, onDelete }: AppointmentTy
             onChange={(e) => setRepeatable(e.target.checked)}
           />
           <label htmlFor="typeRepeatable" className={styles.checkLabel}>
-            Repeatable
+            {t("appointmentTypeManager.repeatable")}
           </label>
         </div>
 
         {repeatable && (
           <div className={styles.field}>
             <label htmlFor="maxSessions" className={styles.label}>
-              Max Sessions
+              {t("appointmentTypeManager.maxSessions")}
             </label>
             <input
               id="maxSessions"
@@ -112,7 +116,7 @@ export function AppointmentTypeManager({ types, onAdd, onDelete }: AppointmentTy
         )}
 
         <button className={styles.addBtn} onClick={handleAdd}>
-          Add Type
+          {t("appointmentTypeManager.addType")}
         </button>
       </div>
     </div>
