@@ -1,12 +1,13 @@
 "use client";
 
-import type { Appointment } from "@/types/appointment";
+import type { Appointment, AppointmentType } from "@/types/appointment";
 import styles from "./CalendarDay.module.css";
 
 interface CalendarDayProps {
   date: string | null;
   isToday: boolean;
   appointments: Appointment[];
+  appointmentTypes: AppointmentType[];
   onAddClick: (date: string) => void;
   onAppointmentClick: (appointment: Appointment) => void;
 }
@@ -15,6 +16,7 @@ export function CalendarDay({
   date,
   isToday,
   appointments,
+  appointmentTypes,
   onAddClick,
   onAppointmentClick,
 }: CalendarDayProps) {
@@ -43,18 +45,30 @@ export function CalendarDay({
       </div>
 
       <ul className={styles.appointmentList}>
-        {appointments.map((appt) => (
-          <li key={appt.id}>
-            <button
-              className={styles.appointmentItem}
-              onClick={() => onAppointmentClick(appt)}
-              title={`${appt.patientName} — ${appt.professionalName}`}
-            >
-              <span className={styles.apptTime}>{appt.time}</span>
-              <span className={styles.apptName}>{appt.patientName}</span>
-            </button>
-          </li>
-        ))}
+        {appointments.map((appt) => {
+          const typeDef = appointmentTypes.find((t) => t.id === appt.typeId);
+          const typeColor = typeDef?.color ?? "#6366f1";
+          const seriesLabel =
+            appt.seriesId && appt.seriesIndex && appt.seriesTotal
+              ? `${appt.seriesIndex}/${appt.seriesTotal}`
+              : null;
+          return (
+            <li key={appt.id}>
+              <button
+                className={styles.appointmentItem}
+                onClick={() => onAppointmentClick(appt)}
+                title={`${appt.patientName} — ${appt.professionalName}${typeDef ? ` (${typeDef.name})` : ""}`}
+                style={{ borderLeftColor: typeColor }}
+              >
+                <span className={styles.apptTime}>{appt.time}</span>
+                <span className={styles.apptName}>{appt.patientName}</span>
+                {seriesLabel && (
+                  <span className={styles.seriesBadge}>{seriesLabel}</span>
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

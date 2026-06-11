@@ -4,6 +4,26 @@
   padding: 24px;
 }
 
+.topBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.settingsLink {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: background 0.15s, color 0.15s;
+}
+
+.settingsLink:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
 @media (max-width: 768px) {
   .main {
     padding: 12px;

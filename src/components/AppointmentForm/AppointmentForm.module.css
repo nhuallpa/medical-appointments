@@ -87,6 +87,24 @@
   color: var(--color-danger);
 }
 
+.hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.warning {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: #92400e;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
