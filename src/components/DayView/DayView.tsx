@@ -2,6 +2,7 @@
 
 import type { Appointment, AppointmentType, TimeSlot } from "@/types/appointment";
 import { formatFullDateLabel } from "@/utils/dateUtils";
+import { useLocale } from "@/i18n/LocaleContext";
 import styles from "./DayView.module.css";
 
 interface DayViewProps {
@@ -25,10 +26,12 @@ export function DayView({
   onAddClick,
   onAppointmentClick,
 }: DayViewProps) {
+  const { locale } = useLocale();
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
-        <h1 className={styles.title}>{formatFullDateLabel(date)}</h1>
+        <h1 className={styles.title}>{formatFullDateLabel(date, locale)}</h1>
         <div className={styles.controls}>
           <button className={styles.navBtn} onClick={onPrevDay} aria-label="Previous day">
             ‹

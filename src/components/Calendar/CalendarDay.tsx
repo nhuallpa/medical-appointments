@@ -1,6 +1,7 @@
 "use client";
 
 import type { Appointment, AppointmentType } from "@/types/appointment";
+import { useTranslation } from "@/i18n/LocaleContext";
 import styles from "./CalendarDay.module.css";
 
 interface CalendarDayProps {
@@ -24,6 +25,8 @@ export function CalendarDay({
   onAppointmentClick,
   onSelectDate,
 }: CalendarDayProps) {
+  const { t } = useTranslation();
+
   if (!date) {
     return <div className={styles.empty} />;
   }
@@ -40,15 +43,15 @@ export function CalendarDay({
         <button
           className={styles.dayNumber}
           onClick={() => onSelectDate(date)}
-          aria-label={`Select ${date}`}
+          aria-label={t("calendar.selectDate", { date })}
         >
           {dayNumber}
         </button>
         <button
           className={styles.addBtn}
           onClick={() => onAddClick(date)}
-          aria-label={`Add appointment on ${date}`}
-          title="Add appointment"
+          aria-label={t("calendar.addAppointmentOn", { date })}
+          title={t("common.addAppointment")}
         >
           +
         </button>

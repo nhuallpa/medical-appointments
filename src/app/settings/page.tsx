@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentTypeManager } from "@/components/AppointmentTypeManager/AppointmentTypeManager";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher/LanguageSwitcher";
 import { ScheduleConfig } from "@/components/ScheduleConfig/ScheduleConfig";
 import { createLogger } from "@/utils/logger";
 import styles from "./settings.module.css";
@@ -25,6 +26,7 @@ export default function SettingsPage() {
           ← Back to Calendar
         </Link>
         <h1 className={styles.title}>Settings</h1>
+        <LanguageSwitcher />
       </div>
 
       <div className={styles.panels}>
