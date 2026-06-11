@@ -31,10 +31,10 @@ test.describe("US2 — Manual language switching", () => {
     const dateValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-18`;
 
     await page.getByRole("button", { name: new RegExp(`Add appointment on ${dateValue}`) }).click();
-    await page.getByLabel(/patient name/i).fill("Carlos Pérez");
+    await page.locator("#patientName").fill("Carlos Pérez");
 
     await page.getByRole("combobox", { name: /language/i }).selectOption("es");
 
-    await expect(page.getByLabel(/patient name/i)).toHaveValue("Carlos Pérez");
+    await expect(page.locator("#patientName")).toHaveValue("Carlos Pérez");
   });
 });
