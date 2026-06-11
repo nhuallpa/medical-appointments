@@ -8,6 +8,7 @@ const defaultConfig: ScheduleConfigType = {
   enabledDays: [1, 2, 3, 4, 5],
   startTime: "08:00",
   endTime: "18:00",
+  slotIntervalMinutes: 30,
 };
 
 describe("ScheduleConfig", () => {
@@ -48,6 +49,31 @@ describe("ScheduleConfig", () => {
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ startTime: "09:00" })
+    );
+  });
+
+  it("renders a slot interval select with options 15/30/45/60 minutes, defaulting to config.slotIntervalMinutes", () => {
+    render(<ScheduleConfig config={defaultConfig} onSave={vi.fn()} />);
+    const select = screen.getByLabelText(/slot interval/i);
+    expect(select).toHaveValue("30");
+    const options = screen.getAllByRole("option").map((o) => (o as HTMLOptionElement).value);
+    expect(options).toEqual(expect.arrayContaining(["15", "30", "45", "60"]));
+  });
+
+  it("defaults the slot interval to 30 when config.slotIntervalMinutes is absent", () => {
+    const { slotIntervalMinutes, ...rest } = defaultConfig;
+    void slotIntervalMinutes;
+    render(<ScheduleConfig config={rest as ScheduleConfigType} onSave={vi.fn()} />);
+    expect(screen.getByLabelText(/slot interval/i)).toHaveValue("30");
+  });
+
+  it("calls onSave with the updated slotIntervalMinutes when changed and saved", async () => {
+    const onSave = vi.fn();
+    render(<ScheduleConfig config={defaultConfig} onSave={onSave} />);
+    await userEvent.selectOptions(screen.getByLabelText(/slot interval/i), "15");
+    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ slotIntervalMinutes: 15 })
     );
   });
 });

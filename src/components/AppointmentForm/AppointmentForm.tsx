@@ -12,6 +12,7 @@ const logger = createLogger("AppointmentForm");
 
 interface AppointmentFormProps {
   initialDate?: string;
+  initialTime?: string;
   appointmentTypes: AppointmentType[];
   scheduleConfig: ScheduleConfig;
   onSubmit: (data: AppointmentFormData) => void;
@@ -31,6 +32,7 @@ function todayKey(): string {
 
 export function AppointmentForm({
   initialDate,
+  initialTime,
   appointmentTypes,
   scheduleConfig,
   onSubmit,
@@ -41,7 +43,7 @@ export function AppointmentForm({
   const [patientName, setPatientName] = useState("");
   const [professionalName, setProfessionalName] = useState("");
   const [date, setDate] = useState(initialDate ?? "");
-  const [time, setTime] = useState("");
+  const [time, setTime] = useState(initialTime ?? "");
   const [typeId, setTypeId] = useState(defaultType?.id ?? "");
   const [sessions, setSessions] = useState(defaultType?.maxSessions ?? 1);
   const [notes, setNotes] = useState("");

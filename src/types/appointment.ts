@@ -14,6 +14,7 @@ export interface ScheduleConfig {
   enabledDays: number[]; // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
   startTime: string; // "HH:MM"
   endTime: string; // "HH:MM"
+  slotIntervalMinutes: number; // 15 | 30 | 45 | 60. Default: 30.
 }
 
 // ── Appointment ──────────────────────────────────────────────────────────────
@@ -56,6 +57,15 @@ export type CalendarGrid = CalendarCell[][];
 
 export type AppointmentsByDate = Record<string, Appointment[]>;
 
+// ── View Mode ────────────────────────────────────────────────────────────────
+
+export type ViewMode = "calendar" | "day";
+
+export interface TimeSlot {
+  time: string; // "HH:MM" — the slot's start time
+  appointments: Appointment[]; // appointments whose time falls within this slot
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 export interface AppointmentState {
@@ -65,6 +75,8 @@ export interface AppointmentState {
   currentYear: number;
   currentMonth: number; // 0-indexed
   selectedAppointment: Appointment | null;
+  viewMode: ViewMode;
+  currentDate: string; // "YYYY-MM-DD" — selected date shared by Calendar and Day views
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -82,4 +94,7 @@ export type AppointmentAction =
   | { type: "DELETE_APPOINTMENT_TYPE"; payload: { id: string } }
   | { type: "UPDATE_SCHEDULE_CONFIG"; payload: Partial<ScheduleConfig> }
   | { type: "ADD_APPOINTMENT_SERIES"; payload: AppointmentFormData }
-  | { type: "DELETE_SERIES"; payload: { seriesId: string } };
+  | { type: "DELETE_SERIES"; payload: { seriesId: string } }
+  | { type: "SET_VIEW_MODE"; payload: { mode: ViewMode } }
+  | { type: "SET_CURRENT_DATE"; payload: { date: string } }
+  | { type: "NAVIGATE_DAY"; payload: { direction: "prev" | "next" } };

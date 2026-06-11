@@ -67,3 +67,13 @@ export function formatMonthLabel(year: number, month: number): string {
 export function isToday(dateKey: string): boolean {
   return dateKey === toDateKey(new Date());
 }
+
+export function formatFullDateLabel(dateKey: string): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}

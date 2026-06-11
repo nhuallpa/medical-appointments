@@ -13,6 +13,7 @@ const defaultSchedule: ScheduleConfig = {
   enabledDays: [1, 2, 3, 4, 5],
   startTime: "08:00",
   endTime: "18:00",
+  slotIntervalMinutes: 30,
 };
 
 // Use a future date for valid submissions (avoids past-date rejection)
@@ -46,6 +47,20 @@ describe("AppointmentForm — core fields", () => {
       />
     );
     expect(screen.getByLabelText(/^date/i)).toHaveValue(FUTURE_DATE);
+  });
+
+  it("pre-fills the time field when initialTime is provided", () => {
+    render(
+      <AppointmentForm
+        initialDate={FUTURE_DATE}
+        initialTime="09:30"
+        appointmentTypes={defaultTypes}
+        scheduleConfig={defaultSchedule}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+    expect(screen.getByLabelText(/time/i)).toHaveValue("09:30");
   });
 
   it("shows sessions field when a repeatable type is selected", async () => {
@@ -208,7 +223,7 @@ describe("AppointmentForm — schedule warnings", () => {
       <AppointmentForm
         initialDate="2027-01-16" // Saturday
         appointmentTypes={defaultTypes}
-        scheduleConfig={{ enabledDays: [1, 2, 3, 4, 5], startTime: "08:00", endTime: "18:00" }}
+        scheduleConfig={{ enabledDays: [1, 2, 3, 4, 5], startTime: "08:00", endTime: "18:00", slotIntervalMinutes: 30 }}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />
@@ -222,7 +237,7 @@ describe("AppointmentForm — schedule warnings", () => {
       <AppointmentForm
         initialDate={FUTURE_DATE}
         appointmentTypes={defaultTypes}
-        scheduleConfig={{ enabledDays: [1, 2, 3, 4, 5], startTime: "08:00", endTime: "18:00" }}
+        scheduleConfig={{ enabledDays: [1, 2, 3, 4, 5], startTime: "08:00", endTime: "18:00", slotIntervalMinutes: 30 }}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />

@@ -6,19 +6,23 @@ import styles from "./CalendarDay.module.css";
 interface CalendarDayProps {
   date: string | null;
   isToday: boolean;
+  isUnavailable: boolean;
   appointments: Appointment[];
   appointmentTypes: AppointmentType[];
   onAddClick: (date: string) => void;
   onAppointmentClick: (appointment: Appointment) => void;
+  onSelectDate: (date: string) => void;
 }
 
 export function CalendarDay({
   date,
   isToday,
+  isUnavailable,
   appointments,
   appointmentTypes,
   onAddClick,
   onAppointmentClick,
+  onSelectDate,
 }: CalendarDayProps) {
   if (!date) {
     return <div className={styles.empty} />;
@@ -28,12 +32,18 @@ export function CalendarDay({
 
   return (
     <div
-      className={`${styles.cell} ${isToday ? styles.today : ""}`}
+      className={`${styles.cell} ${isToday ? styles.today : ""} ${isUnavailable ? styles.unavailable : ""}`}
       data-testid="calendar-day"
       data-today={isToday ? "true" : undefined}
     >
       <div className={styles.header}>
-        <span className={styles.dayNumber}>{dayNumber}</span>
+        <button
+          className={styles.dayNumber}
+          onClick={() => onSelectDate(date)}
+          aria-label={`Select ${date}`}
+        >
+          {dayNumber}
+        </button>
         <button
           className={styles.addBtn}
           onClick={() => onAddClick(date)}

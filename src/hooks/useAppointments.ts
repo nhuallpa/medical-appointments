@@ -2,12 +2,14 @@
 
 import { useCallback } from "react";
 import { useAppointmentContext } from "@/context/AppointmentContext";
+import { generateTimeSlots } from "@/utils/scheduleUtils";
 import type {
   Appointment,
   AppointmentFormData,
   AppointmentsByDate,
   AppointmentType,
   ScheduleConfig,
+  ViewMode,
 } from "@/types/appointment";
 
 export function useAppointments() {
@@ -18,6 +20,13 @@ export function useAppointments() {
     if (!appointmentsByDate[appt.date]) appointmentsByDate[appt.date] = [];
     appointmentsByDate[appt.date].push(appt);
   }
+
+  const timeSlots = generateTimeSlots(
+    state.scheduleConfig.startTime,
+    state.scheduleConfig.endTime,
+    state.scheduleConfig.slotIntervalMinutes,
+    appointmentsByDate[state.currentDate] ?? []
+  );
 
   const addAppointment = useCallback(
     (data: AppointmentFormData) => dispatch({ type: "ADD_APPOINTMENT", payload: data }),
@@ -72,6 +81,21 @@ export function useAppointments() {
     [dispatch]
   );
 
+  const setViewMode = useCallback(
+    (mode: ViewMode) => dispatch({ type: "SET_VIEW_MODE", payload: { mode } }),
+    [dispatch]
+  );
+
+  const setCurrentDate = useCallback(
+    (date: string) => dispatch({ type: "SET_CURRENT_DATE", payload: { date } }),
+    [dispatch]
+  );
+
+  const navigateDay = useCallback(
+    (direction: "prev" | "next") => dispatch({ type: "NAVIGATE_DAY", payload: { direction } }),
+    [dispatch]
+  );
+
   return {
     appointments: state.appointments,
     appointmentTypes: state.appointmentTypes,
@@ -79,7 +103,10 @@ export function useAppointments() {
     currentYear: state.currentYear,
     currentMonth: state.currentMonth,
     selectedAppointment: state.selectedAppointment,
+    viewMode: state.viewMode,
+    currentDate: state.currentDate,
     appointmentsByDate,
+    timeSlots,
     addAppointment,
     addAppointmentSeries,
     deleteAppointment,
@@ -91,5 +118,8 @@ export function useAppointments() {
     addAppointmentType,
     deleteAppointmentType,
     updateScheduleConfig,
+    setViewMode,
+    setCurrentDate,
+    navigateDay,
   };
 }
