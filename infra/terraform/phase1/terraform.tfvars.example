@@ -1,0 +1,16 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is git-ignored to avoid leaking account-specific data.
+
+aws_region  = "us-east-1"
+environment = "prod"
+app_name    = "medical-appointments"
+
+# ── Optional: set these only if you own a domain registered in Route 53 ───────
+# domain_name = "mypyme.com"
+# subdomain   = "app"
+
+# ── CloudFront pricing ────────────────────────────────────────────────────────
+# PriceClass_100  → US + EU only (cheapest, ~$0.0085/GB)
+# PriceClass_200  → US + EU + Asia + Middle East + Africa
+# PriceClass_All  → All edge locations including South America
+cloudfront_price_class = "PriceClass_All"
